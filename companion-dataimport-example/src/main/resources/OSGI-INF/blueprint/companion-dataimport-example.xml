@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:cm="http://aries.apache.org/blueprint/xmlns/blueprint-cm/v1.4.0"
+           xsi:schemaLocation="
+         http://www.osgi.org/xmlns/blueprint/v1.0.0 https://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+         http://camel.apache.org/schema/blueprint http://camel.apache.org/schema/blueprint/camel-blueprint-3.2.0.xsd">
+    
+    <cm:property-placeholder id="companion.dataimport.example"
+                             persistent-id="companion.dataimport.example" update-strategy="reload"/>
+    
+    <reference id="ds" availability="optional" interface="javax.sql.DataSource"
+               filter="(&amp;(objectClass=javax.sql.DataSource)(dataSourceName=db-ds))"/>
+    
+    <bean id="sql" class="org.apache.camel.component.sql.SqlComponent">
+        <property name="dataSource" ref="ds"/>
+    </bean>
+    
+    <bean id="handler" class="org.searchcompanion.dataimport.ImportTaskHandler"/>
+    
+    <camelContext id="companion-dataimport-example"
+                  xmlns="http://camel.apache.org/schema/blueprint"
+                  errorHandlerRef="errorChannel">
+    
+        <errorHandler id="errorChannel" type="DeadLetterChannel" deadLetterUri="direct:error-processing"/>
+    
+        <routeContextRef ref="companion-dataimport-route-context"/>
+        
+        <threadPoolProfile id="defaultThreadPool" defaultProfile="true"
+                           poolSize="{{threadpool.poolsize:12}}"
+                           maxPoolSize="{{threadpool.poolsize:12}}"/>
+    
+        <route id="startup-example-initialization" startupOrder="0">
+            <from uri="timer:startup-example?repeatCount=1&amp;delay=0"/>
+            <setHeader name="CamelHttpQuery">
+                <simple>action=CREATE&amp;name={{solr.collection}}&amp;{{solr.collection.create.params.{{env:COMPANION_ROLE:dev}}}}</simple>
+            </setHeader>
+            <doTry>
+                <to uri="{{solr.httpbaseurl.{{env:COMPANION_ROLE:dev}}}}/admin/collections"/>
+                <log message="Solr collection '{{solr.collection}}' created.\n${body}"/>
+                <doCatch>
+                    <exception>java.lang.Exception</exception>
+                    <log loggingLevel="WARN" message="Error creating solr collection '{{solr.collection}}'. Assuming collection exists already"/>
+                </doCatch>
+            </doTry>
+        </route>
+    
+        <route id="periodical-db-data-generation">
+            <from uri="timer:db-data-generation?period=60s"/>
+            <setHeader name="newItemId"><simple>item_id_${date:now:yyyyMMdd_hhmmss}</simple></setHeader>
+            <setHeader name="CamelSqlQuery">
+                <constant>INSERT into items (item_id, supplier, status) VALUES(:?newItemId,'supplier','alive')</constant>
+            </setHeader>
+            <to uri="sql:add-db-record-items"/>
+            <setHeader name="CamelSqlQuery">
+                <simple>INSERT into items_language (item_id, language_id, description, features) VALUES(:?newItemId, :?newLanguageId, 'description','features')</simple>
+            </setHeader>
+            <setHeader name="newLanguageId"><constant>en</constant></setHeader>
+            <to uri="sql:add-db-record-items_language"/>
+            <setHeader name="newLanguageId"><constant>fr</constant></setHeader>
+            <to uri="sql:add-db-record-items_language"/>
+            <log message="New record generated in DB with item id = '${header.newItemId}'"/>
+        </route>
+    
+        <route id="error-processing">
+            <from uri="direct:error-processing"/>
+            <setBody>
+                <simple>Exception caught on companion process:\nError on exchange ${exchangeId}\n${exception.message}\n${exception.stacktrace}</simple>
+            </setBody>
+            <to uri="log:alerter?level=ERROR&amp;showAll=true&amp;multiline=true"/>
+        </route>
+        
+    </camelContext>
+
+</blueprint>

@@ -1,0 +1,68 @@
+version: '3'
+services:
+
+  karaf:
+    container_name: companion_karaf
+    hostname: karaf1
+    image: searchcompanion/karaf
+    stdin_open: true
+    tty: true
+    ports:
+      - 1099:1099
+      - 8101:8101
+      - 8181:8181
+      - 44444:44444
+    environment:
+      - COMPANION_ROLE=demo
+      - COMPANION_DB_HOST=db1
+      - COMPANION_SOLR_HOST=solr1
+      - COMPANION_ZK_HOST=zoo1
+    networks:
+      - companion_demo
+
+  db:
+    container_name: companion_db
+    hostname: db1
+    image: postgres:14.2
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=change_me
+      - APP_DB_USER=companion
+      - APP_DB_PASS=companion
+      - APP_DB_NAME=companion
+    volumes:
+      - ./demo-db:/docker-entrypoint-initdb.d/
+    ports:
+      - 5432:5432
+    networks:
+      - companion_demo
+
+  solr:
+    container_name: companion_solr
+    hostname: solr1
+    image: solr:8.11.1
+    ports:
+      - "8983:8983"
+    environment:
+      - ZK_HOST=zoo1:2181
+    networks:
+      - companion_demo
+    depends_on:
+      - zoo
+
+  zoo:
+    image: zookeeper:3.6.2
+    container_name: companion_zoo
+    hostname: zoo1
+    ports:
+      - 2181:2181
+      - 7001:7000
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=zoo1:2888:3888;2181
+      ZOO_4LW_COMMANDS_WHITELIST: mntr, conf, ruok
+    networks:
+      - companion_demo
+
+networks:
+  companion_demo:

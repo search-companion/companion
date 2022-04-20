@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    
+    <groupId>org.search-companion</groupId>
+    <artifactId>companion</artifactId>
+    <version>0.8.0-SNAPSHOT</version>
+    
+    <name>Search Companion</name>
+    <description>Search Companion</description>
+    <url>https://www.search-companion.org</url>
+    <inceptionYear>2022</inceptionYear>
+    
+    <packaging>pom</packaging>
+    
+    <modules>
+        <module>companion-camel-bom</module>
+        <module>companion-dataimport-core</module>
+        <module>companion-dataimport-example</module>
+        <module>companion-karaf-features</module>
+        <module>companion-karaf</module>
+    </modules>
+    
+    <developers>
+        <developer>
+            <name>The Search Companion Team</name>
+            <email>info@search-companion.org</email>
+            <url>https://search-companion.org</url>
+            <organization>search-companion.org</organization>
+            <organizationUrl>https://search-companion.org</organizationUrl>
+        </developer>
+    </developers>
+    
+    <scm>
+        <connection>${scm.connection}</connection>
+        <developerConnection>${scm.developerConnection}</developerConnection>
+        <url>${scm.url}</url>
+        <tag>HEAD</tag>
+    </scm>
+    
+    <distributionManagement>
+        <repository>
+            <id>${distributionManagement.release.id}</id>
+            <name>${distributionManagement.release.name}</name>
+            <url>${distributionManagement.release.url}</url>
+        </repository>
+        <snapshotRepository>
+            <id>${distributionManagement.snapshot.id}</id>
+            <name>${distributionManagement.snapshot.name}</name>
+            <url>${distributionManagement.snapshot.url}</url>
+        </snapshotRepository>
+    </distributionManagement>
+    
+    <issueManagement>
+        <system>github</system>
+        <url>https://github.com/search-companion/companion/issues</url>
+    </issueManagement>
+    
+    <properties>
+        
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        
+        <scm.connection>scm:git:https://github.com/search-companion/companion.git</scm.connection>
+        <scm.developerConnection>scm:git:https://github.com/search-companion/companion.git</scm.developerConnection>
+        <scm.url>https://github.com/search-companion/companion</scm.url>
+        
+        <distributionManagement.release.id>companion.releases.https</distributionManagement.release.id>
+        <distributionManagement.release.name>Companion Release Distribution Repository</distributionManagement.release.name>
+        <distributionManagement.release.url>https://mvn.search-companion.org/mvnrepo/companion</distributionManagement.release.url>
+        <distributionManagement.snapshot.id>companion.snapshots.https</distributionManagement.snapshot.id>
+        <distributionManagement.snapshot.name>Companion Development Snapshot Repository</distributionManagement.snapshot.name>
+        <distributionManagement.snapshot.url>https://mvn.search-companion.org/mvnrepo/companion-snapshot</distributionManagement.snapshot.url>
+    
+        <camel.version>3.16.0</camel.version>
+        <camel-test.version>3.9.0</camel-test.version>
+        <commons-dbcp2.version>2.1.1</commons-dbcp2.version>
+        <commons-io.version>2.8.0</commons-io.version>
+        <curator.version>5.1.0</curator.version>
+        <derby.version>10.14.1.0</derby.version>
+        <hawtio.version>2.14.5</hawtio.version>
+        <httpcomponents-httpcore.version>4.4.14</httpcomponents-httpcore.version>
+        <httpcomponents-httpclient.version>4.5.13</httpcomponents-httpclient.version>
+        <jackson2.version>2.13.2</jackson2.version>
+        <java.version>11</java.version>
+        <karaf.version>4.3.1</karaf.version>
+        <log4j.version>2.17.2</log4j.version>
+        <solr.version>8.11.1</solr.version>
+        <zookeeper.version>3.6.2</zookeeper.version>
+        
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <maven.compiler.release>${java.version}</maven.compiler.release>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+        <maven.source.skip>true</maven.source.skip>
+
+    </properties>
+    
+    <build>
+        
+        <defaultGoal>install</defaultGoal>
+    
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>3.2.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.karaf.tooling</groupId>
+                    <artifactId>karaf-maven-plugin</artifactId>
+                    <version>${karaf.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>3.2.0</version>
+                    <configuration>
+                        <encoding>${project.build.sourceEncoding}</encoding>
+                        <propertiesEncoding>${project.build.sourceEncoding}</propertiesEncoding>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.10.0</version>
+                    <configuration>
+                        <release>${java.version}</release>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>2.22.2</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>3.2.1</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>3.2.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-install-plugin</artifactId>
+                    <version>2.5.2</version>
+                    <configuration>
+                        <createChecksum>true</createChecksum>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>2.8.2</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-release-plugin</artifactId>
+                    <version>2.5.3</version>
+                    <configuration>
+                        <autoVersionSubmodules>true</autoVersionSubmodules>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.felix</groupId>
+                    <artifactId>maven-bundle-plugin</artifactId>
+                    <version>5.1.4</version>
+                    <extensions>true</extensions>
+                    <executions>
+                        <execution>
+                            <id>bundle-manifest</id>
+                            <phase>prepare-package</phase>
+                            <goals>
+                                <goal>manifest</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <supportedProjectTypes>
+                            <supportedProjectType>jar</supportedProjectType>
+                            <supportedProjectType>bundle</supportedProjectType>
+                        </supportedProjectTypes>
+                    </configuration>
+                </plugin>
+                <!-- to run the example using mvn camel:run -->
+                <plugin>
+                    <groupId>org.apache.camel</groupId>
+                    <artifactId>camel-maven-plugin</artifactId>
+                    <version>3.9.0</version>
+                    <configuration>
+                        <useBlueprint>true</useBlueprint>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+    
+</project>

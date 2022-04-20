@@ -1,0 +1,359 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="
+         http://www.osgi.org/xmlns/blueprint/v1.0.0 https://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+         http://camel.apache.org/schema/blueprint http://camel.apache.org/schema/blueprint/camel-blueprint-3.2.0.xsd">
+    
+    <bean id="groupedBodyAggregationStrategy"
+          class="org.apache.camel.processor.aggregate.GroupedBodyAggregationStrategy"/>
+    
+    <routeContext id="companion-dataimport-route-context" xmlns="http://camel.apache.org/schema/blueprint">
+    
+        <route id="data-import-properties-get" startupOrder="1">
+            <from uri="{{importtask.file.uri.{{env:COMPANION_ROLE:dev}}}}"/>
+            <to uri="bean:handler?method=setImportTaskFromFile"/>
+            <filter>
+                <simple>${exchangeProperty.ImportTask}</simple>
+                <log loggingLevel="INFO"
+                     message="Retrieved ImportTask file from {{importtask.file.uri.{{env:COMPANION_ROLE:dev}}}} ${exchangeProperty.ImportTask}."/>
+            </filter>
+        </route>
+        
+        <route id="data-import-properties-save">
+            <from uri="direct:data-import-properties-save"/>
+            <to uri="bean:handler?method=isImportTaskSetFromFile"/>
+            <setBody>
+                <simple resultType="String">${exchangeProperty.ImportTask}</simple>
+            </setBody>
+            <to uri="{{importtask.file.uri.{{env:COMPANION_ROLE:dev}}}}"/>
+        </route>
+    
+        <route id="monitor-zk-client">
+            <from uri="{{monitorzkclient.from.uri}}"/>
+            <to uri="bean:handler?method=isZkClientConnected"/>
+            <choice>
+                <when>
+                    <simple>${header.isZkClientNotConnected}</simple>
+                    <log loggingLevel="WARN" message="Zookeeper client connection check for context '${exchange.context.name}': ${body}"/>
+                    <to uri="direct:data-import-process-start"/>
+                </when>
+                <otherwise>
+                    <log loggingLevel="DEBUG" message="Zookeeper client connection check for context '${exchange.context.name}': ${body}"/>
+                </otherwise>
+            </choice>
+        </route>
+    
+        <route id="data-import-full" autoStartup="false">
+            <from uri="timer://full?repeatCount=1"/>
+            <setProperty name="ImportType">
+                <constant>FULL</constant>
+            </setProperty>
+            <setProperty name="newTargetSolrCollection">
+                <simple>{{solr.collection}}_$simple{date:now:{{solr.collection.dateformat:yyyyMMdd}}}</simple>
+            </setProperty>
+            <to uri="direct:data-import-process-start"/>
+        </route>
+        
+        <route id="data-import-delta" autoStartup="{{deltaimport.autostart}}">
+            <from uri="{{deltaimport.from.uri}}"/>
+            <choice>
+                <when>
+                    <simple>${bean:handler?method=isImportTaskSetFromFile}</simple>
+                    <to uri="direct:data-import-process-start"/>
+                </when>
+                <otherwise>
+                    <choice>
+                        <when>
+                            <simple>${header.CamelTimerCounter} > 1</simple>
+                            <log loggingLevel="WARN"
+                                 message="No ImportTask file retrieved. New ImportTask file initiated in {{importtask.file.uri.{{env:COMPANION_ROLE:dev}}}}. ImportTask file should be available in next cycle."/>
+                            <to uri="direct:data-import-properties-save"/>
+                        </when>
+                        <otherwise>
+                            <log loggingLevel="WARN"
+                                 message="ImportTask file not retrieved from {{importtask.file.uri.{{env:COMPANION_ROLE:dev}}}}. Waiting 1 cycle to become available."/>
+                        </otherwise>
+                    </choice>
+                </otherwise>
+            </choice>
+        </route>
+    
+        <route id="data-import-process-start">
+            <from uri="direct:data-import-process-start"/>
+            <choice>
+                <when>
+                    <simple>${bean:handler?method=isImportTaskProcessing}</simple>
+                    <log message="${header.skipProcessingMessage}" />
+                </when>
+                <otherwise>
+                    <choice>
+                        <when>
+                            <simple>${header.isZkClientNotConnected}</simple>
+                            <log loggingLevel="INFO" message="Zookeeper client not in sync for context '${exchange.context.name}': Initiating restart route 'data-import-properties-save'"/>
+                            <to uri="controlbus:route?routeId=data-import-properties-save&amp;action=restart"/>
+                            <to uri="controlbus:route?routeId=data-import-properties-get&amp;action=restart"/>
+                        </when>
+                        <otherwise>
+                            <to uri="direct:data-import-process"/>
+                        </otherwise>
+                    </choice>
+                </otherwise>
+            </choice>
+        </route>
+    
+        <route id="data-import-process">
+            <from uri="direct:data-import-process"/>
+            <onException>
+                <exception>java.sql.SQLNonTransientConnectionException</exception>
+                <handled>
+                    <constant>true</constant>
+                </handled>
+                <log loggingLevel="WARN" message="DB connection not available.\nException: ${exception.message}"/>
+            </onException>
+            <log loggingLevel="DEBUG" message="New import cycle (${exchangeProperty.CamelTimerCounter}) has started"/>
+            <to uri="bean:handler?method=initializeImportTask"/>
+            <filter>
+                <simple>${bean:handler?method=isUseAliasHandling}</simple>
+                <setHeader name="CamelHttpQuery">
+                    <simple>action=CREATE&amp;name=${exchangeProperty.ImportTask.collection}&amp;{{solr.collection.create.params.{{env:COMPANION_ROLE:dev}}}}</simple>
+                </setHeader>
+                <to uri="direct:solr-collections-api"/>
+                <log message="Solr collection '${exchangeProperty.ImportTask.collection}' created.\n${body}"/>
+            </filter>
+            <setHeader name="CamelSqlQuery"><constant>{{sql.latest}}</constant></setHeader>
+            <to uri="sql:latest?outputType=SelectOne"/>
+            <to uri="bean:handler?method=setLastTimeStampFromDb"/>
+            <choice>
+                <when>
+                    <simple>${properties:sql.idscount:false}</simple>
+                    <setHeader name="CamelSqlQuery"><constant>{{sql.idscount:''}}</constant></setHeader>
+                    <to uri="sql:idscount?outputType=SelectOne"/>
+                </when>
+                <otherwise>
+                    <setBody>
+                        <constant>-1</constant>
+                    </setBody>
+                </otherwise>
+            </choice>
+            <to uri="bean:handler?method=setStartPage(${exchange},${body},${properties:sql.pagesize:0})"/>
+            <to uri="direct:data-import-properties-save"/>
+            <filter>
+                <simple>${header.TimeStampFrom} != ${header.TimeStampTo}</simple>
+                <log message="${exchangeProperty.ImportTask.importType} import cycle (${exchangeProperty.CamelTimerCounter}) has started for collection '${exchangeProperty.ImportTask.collection}' with ${exchangeProperty.ImportTask.totalCount} records from ${exchangeProperty.ImportTask.from} to ${exchangeProperty.ImportTask.to}"/>
+                <loop doWhile="true">
+                    <simple>${bean:handler?method=isRunNextPage}</simple>
+                    <log loggingLevel="DEBUG"
+                         message="Retrieving data from sql with from=${header.TimeStampFrom}, to=${header.TimeStampTo}, offset=${header.OffSet}"/>
+                    <setHeader name="CamelSqlQuery"><constant>{{sql.ids}}</constant></setHeader>
+                    <to uri="sql:ids?outputType=StreamList"/>
+                    <choice>
+                        <when>
+                            <simple>${body.hasNext}</simple>
+                            <split streaming="true" parallelProcessing="true">
+                                <simple>${body}</simple>
+                                <setBody>
+                                    <simple>${bean:handler?method=getProcessId}</simple>
+                                </setBody>
+                                <log loggingLevel="DEBUG" message="Started processing ID: ${body}"/>
+                                <to uri="direct:data-import-process-id"/>
+                                <filter>
+                                    <simple>${body} != null</simple>
+                                    <to uri="direct:data-import-aggregate"/>
+                                </filter>
+                                <log loggingLevel="DEBUG" message="Completed processing ID: ${body}"/>
+                            </split>
+                            <to uri="bean:handler?method=incrementOffSet"/>
+                        </when>
+                        <otherwise>
+                            <to uri="bean:handler?method=setEOF"/>
+                        </otherwise>
+                    </choice>
+                    <to uri="direct:data-import-properties-save"/>
+                </loop>
+                <filter>
+                    <simple>${bean:handler?method=isRunSolrCommit}</simple>
+                    <to uri="direct:data-import-final-commit"/>
+                    <to uri="bean:handler?method=setCommitted"/>
+                </filter>
+                <to uri="bean:handler?method=setStopProcessing"/>
+                <log message="${exchangeProperty.ImportTask.importType} import cycle (${exchangeProperty.CamelTimerCounter}) has completed"/>
+                <to uri="direct:data-import-properties-save"/>
+            </filter>
+        </route>
+        
+        <route id="data-import-process-id">
+            <from uri="direct:data-import-process-id"/>
+            <setHeader name="ProcessId">
+                <simple>${body}</simple>
+            </setHeader>
+            <loop doWhile="true">
+                <simple>${bean:handler?method=hasNextTable}</simple>
+                <to uri="sql:data?outputType=SelectList"/>
+                <log loggingLevel="DEBUG" message="Data retrieved via jdbc\nHeaders: ${headers}"/>
+                <to uri="bean:handler?method=appendDataToTablesProcessor"/>
+            </loop>
+            <to uri="bean:handler?method=mapTablesToSolrDocument"/>
+            <filter>
+                <simple>${exchange.fromRouteId} == 'data-import-process-id'</simple>
+                <log message="Solr input set\nProcessId: ${header.ProcessId}\nOperation: ${header.SolrOperation}\n${body}"/>
+            </filter>
+        </route>
+        
+        <route id="data-import-aggregate">
+            <from uri="direct:data-import-aggregate"/>
+            <aggregate aggregationStrategy="groupedBodyAggregationStrategy"
+                       completionSize="{{aggregator.completionSize}}"
+                       completionInterval="{{aggregator.completionInterval}}"
+                       forceCompletionOnStop="true">
+                <correlationExpression>
+                    <simple>${header.SolrOperation}</simple>
+                </correlationExpression>
+                <filter>
+                    <simple>${body} != null</simple>
+                    <removeHeaders pattern="*"/>
+                    <setHeader name="SolrOperation">
+                        <simple>${exchangeProperty.CamelAggregatedCorrelationKey}</simple>
+                    </setHeader>
+                    <setHeader name="SolrDocumentCount">
+                        <simple>${body.size}</simple>
+                    </setHeader>
+                    <choice>
+                        <when>
+                            <simple>${header.SolrOperation} == 'DELETE_BY_QUERY'</simple>
+                            <split>
+                                <simple>${body}</simple>
+                                <to uri="direct:data-import-aggregate-deleteddocquery"/>
+                            </split>
+                        </when>
+                        <otherwise>
+                            <to uri="direct:solr-route"/>
+                        </otherwise>
+                    </choice>
+                    <log message="Sent ${header.SolrDocumentCount} '${exchangeProperty.CamelAggregatedCorrelationKey}' documents to Solr on ${exchangeProperty.CamelToEndpoint}"/>
+                </filter>
+            </aggregate>
+        </route>
+      
+        <route id="data-import-aggregate-deleteddocquery">
+            <from uri="direct:data-import-aggregate-deleteddocquery"/>
+            <aggregate aggregationStrategy="groupedBodyAggregationStrategy"
+                       completionSize="{{aggregator.deletedDoc.completionSize}}"
+                       completionTimeout="{{aggregator.deletedDoc.completionTimeout}}"
+                       forceCompletionOnStop="true">
+                <correlationExpression>
+                    <constant>true</constant>
+                </correlationExpression>
+                <to uri="bean:handler?method=mapGroupedListToSolrDeleteQuery"/>
+                <to uri="direct:solr-route"/>
+            </aggregate>
+        </route>
+        
+        <route id="data-import-final-commit">
+            <from uri="direct:data-import-final-commit"/>
+            <setProperty name="CamelAggregationCompleteAllGroups">
+                <constant>true</constant>
+            </setProperty>
+            <to uri="direct:data-import-aggregate"/>
+            <setProperty name="CamelAggregationCompleteAllGroups">
+                <constant>true</constant>
+            </setProperty>
+            <to uri="direct:data-import-aggregate-deleteddocquery"/>
+            <delay>
+                <constant>200</constant>
+            </delay>
+            <setHeader name="SolrOperation">
+                <constant>COMMIT</constant>
+            </setHeader>
+            <to uri="direct:solr-route"/>
+            <log message="Commit request sent to Solr on ${exchangeProperty.CamelToEndpoint}"/>
+            <filter>
+                <simple>${bean:handler?method=isUseAliasHandling}</simple>
+                <setHeader name="CamelHttpQuery">
+                    <simple>action=CREATEALIAS&amp;name={{solr.collection}}&amp;collections=${exchangeProperty.ImportTask.collection}</simple>
+                </setHeader>
+                <to uri="direct:solr-collections-api"/>
+                <log message="Alias '{{solr.collection}}' set to point to solr collection '${exchangeProperty.ImportTask.collection}'\n${body}"/>
+                <to uri="direct:solr-remove-old-collections"/>
+            </filter>
+            <to uri="direct:solr-spellcheck-build"/>
+        </route>
+        
+        <route id="solr-remove-old-collections">
+            <from uri="direct:solr-remove-old-collections"/>
+            <setHeader name="CamelHttpQuery"><simple>action=LIST</simple></setHeader>
+            <to uri="direct:solr-collections-api"/>
+            <unmarshal><json/></unmarshal>
+            <to uri="bean:handler?method=validateCollectionsToRemove"/>
+            <split>
+                <simple>${body}</simple>
+                <setHeader name="CollectionToRemove"><simple>${body}</simple></setHeader>
+                <setHeader name="CamelHttpQuery">
+                    <simple>action=DELETE&amp;name=${header.CollectionToRemove}</simple>
+                </setHeader>
+                <to uri="direct:solr-collections-api"/>
+                <log message="Old collection '${header.CollectionToRemove}' removed."/>
+            </split>
+        </route>
+        
+        <route id="solr-delete-by-query">
+            <from uri="direct:solr-delete-by-query"/>
+            <choice>
+                <when>
+                    <simple>${body}</simple>
+                    <setHeader name="SolrOperation">
+                        <constant>DELETE_BY_QUERY</constant>
+                    </setHeader>
+                    <to uri="direct:solr-route"/>
+                    <log message="Solr delete by query '${body}' sent to Solr on ${exchangeProperty.CamelToEndpoint}"/>
+                    <to uri="direct:data-import-final-commit"/>
+                </when>
+                <otherwise>
+                    <log loggingLevel="ERROR"
+                         message="Solr delete by query NOT sent to Solr on ${exchangeProperty.CamelToEndpoint} because of missing query!"/>
+                </otherwise>
+            </choice>
+        </route>
+    
+        <route id="solr-collections-api">
+            <from uri="direct:solr-collections-api"/>
+            <choice>
+                <when>
+                    <simple>'{{solr.httpbaseurl.{{env:COMPANION_ROLE:dev}}}}' startsWith 'https'</simple>
+                    <to uri="{{solr.httpbaseurl.{{env:COMPANION_ROLE:dev}}}}/admin/collections?useGlobalSslContextParameters=true&amp;authenticationPreemptive=true"/>
+                </when>
+                <otherwise>
+                    <to id="endpoint-solr-collections-api" uri="{{solr.httpbaseurl.{{env:COMPANION_ROLE:dev}}}}/admin/collections"/>
+                </otherwise>
+            </choice>
+        </route>
+    
+        <route id="solr-spellcheck-build">
+            <from uri="direct:solr-spellcheck-build" />
+            <to uri="bean:handler?method=getStringListFromProperty(${properties:solr.spellcheck.dictionaries:})"/>
+            <split>
+                <simple>${body}</simple>
+                <setHeader name="spellcheck-dictionary"><simple>${body}</simple></setHeader>
+                <setHeader name="spellcheck-delay"><constant>{{solr.spellcheck.delay.{{env:COMPANION_ROLE:dev}}:1000}}</constant></setHeader>
+                <log message="Spellcheck rebuild for '${header.spellcheck-dictionary}' started (incl delay ${header.spellcheck-delay} ms)"/>
+                <delay><simple>${header.spellcheck-delay}</simple></delay>
+                <removeHeaders pattern="CamelHttp*"/>
+                <setHeader name="CamelHttpQuery">
+                    <simple>${properties:solr.spellcheck.query.${header.spellcheck-dictionary}:}</simple>
+                </setHeader>
+                <setHeader name="CamelHttpUri">
+                    <simple>{{solr.httpbaseurl.{{env:COMPANION_ROLE:dev}}}}/${exchangeProperty.ImportTask.collection}${properties:solr.spellcheck.path:/spell}</simple>
+                </setHeader>
+                <to uri="{{solr.httpbaseurl.{{env:COMPANION_ROLE:dev}}}}?useGlobalSslContextParameters=true&amp;authenticationPreemptive=true"/>
+                <log message="Solr spellcheck for (${header.spellcheck-dictionary}) built."/>
+            </split>
+        </route>
+    
+        <route id="solr-route">
+            <from uri="direct:solr-route"/>
+            <toD uri="{{solr.solrbaseurl.{{env:COMPANION_ROLE:dev}}}}/${exchangeProperty.ImportTask.collection}"/>
+        </route>
+    
+    </routeContext>
+
+</blueprint>

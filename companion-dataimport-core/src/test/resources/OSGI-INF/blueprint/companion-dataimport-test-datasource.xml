@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:cm="http://aries.apache.org/blueprint/xmlns/blueprint-cm/v1.4.0"
+           xsi:schemaLocation="
+         http://www.osgi.org/xmlns/blueprint/v1.0.0 https://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd">
+
+    <cm:property-placeholder persistent-id="companion.dataimport.test.datasource" placeholder-prefix="$d{">
+        <cm:default-properties>
+            <cm:property name="jdbc.driver" value="org.apache.derby.jdbc.EmbeddedDriver" />
+            <cm:property name="jdbc.url" value="jdbc:derby:memory:datafactory;create=true" />
+            <cm:property name="jdbc.connectionProperties" value="" />
+            <cm:property name="jdbc.username" value="" />
+            <cm:property name="jdbc.password" value="" />
+            <cm:property name="jdbc.initialSize" value="1" />
+            <cm:property name="jdbc.maxTotal" value="10" />
+            <cm:property name="jdbc.maxIdle" value="10" />
+            <cm:property name="jdbc.minIdle" value="1" />
+            <cm:property name="jdbc.maxWaitMillis" value="15000" />
+        </cm:default-properties>
+    </cm:property-placeholder>
+    
+    <bean id="dataSource1" class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close">
+        <property name="driverClassName" value="$d{jdbc.driver}" />
+        <property name="url" value="$d{jdbc.url}" />
+        <property name="username" value="$d{jdbc.username}" />
+        <property name="password" value="$d{jdbc.password}" />
+        <property name="connectionProperties" value="$d{jdbc.connectionProperties}" />
+        <property name="initialSize" value="$d{jdbc.initialSize}" />
+        <property name="maxTotal" value="$d{jdbc.maxTotal}" />
+        <property name="maxIdle" value="$d{jdbc.maxIdle}" />
+        <property name="minIdle" value="$d{jdbc.minIdle}" />
+        <property name="maxWaitMillis" value="$d{jdbc.maxWaitMillis}" />
+        <property name="jmxName" value="org.apache.commons.dbcp2:DataSource=$d{jdbc.jmxName}" />
+    </bean>
+    
+</blueprint>

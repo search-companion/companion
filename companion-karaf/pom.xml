@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    
+    <parent>
+        <groupId>org.search-companion</groupId>
+        <artifactId>companion</artifactId>
+        <version>0.8.0-SNAPSHOT</version>
+    </parent>
+    
+    <artifactId>companion-karaf</artifactId>
+    <name>Search Companion :: Karaf :: Distribution</name>
+    <description>Search Companion karaf distribution</description>
+    
+    <packaging>karaf-assembly</packaging>
+    
+    <properties>
+        <!--suppress UnresolvedMavenProperty -->
+        <companion.pax.url.mvn.repositories>${distributionManagement.snapshot.url}@id=${distributionManagement.snapshot.id}@snapshots@noreleases, \
+            ${distributionManagement.release.url}@id=${distributionManagement.release.id}</companion.pax.url.mvn.repositories>
+        <version.companion-karaf-features>${project.version}</version.companion-karaf-features>
+    </properties>
+    
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.apache.karaf</groupId>
+                <artifactId>karaf-bom</artifactId>
+                <version>${karaf.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+    
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.karaf.features</groupId>
+            <artifactId>framework</artifactId>
+            <version>${karaf.version}</version>
+            <type>kar</type>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.karaf.features</groupId>
+            <artifactId>standard</artifactId>
+            <classifier>features</classifier>
+            <type>xml</type>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.karaf.features</groupId>
+            <artifactId>enterprise</artifactId>
+            <classifier>features</classifier>
+            <type>xml</type>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.karaf.features</groupId>
+            <artifactId>spring</artifactId>
+            <classifier>features</classifier>
+            <type>xml</type>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.camel.karaf</groupId>
+            <artifactId>apache-camel</artifactId>
+            <version>${camel.version}</version>
+            <classifier>features</classifier>
+            <type>xml</type>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.hawt</groupId>
+            <artifactId>hawtio-karaf</artifactId>
+            <version>${hawtio.version}</version>
+            <classifier>features</classifier>
+            <type>xml</type>
+            <scope>runtime</scope>
+        </dependency>
+    </dependencies>
+    
+    <build>
+        
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>**/*</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/main/filtered-resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>**/*</include>
+                </includes>
+            </resource>
+        </resources>
+    
+        <plugins>
+            <plugin>
+                <groupId>org.apache.karaf.tooling</groupId>
+                <artifactId>karaf-maven-plugin</artifactId>
+                <extensions>true</extensions>
+                <configuration>
+                    <finalName>${project.artifactId}</finalName>
+                    <archiveZip>false</archiveZip>
+                    <archiveTarGz>true</archiveTarGz>
+                    <startupRepositories>
+                    </startupRepositories>
+                    <bootRepositories>
+                        <bootRepository>mvn:org.search-companion/companion-karaf-features/${version.companion-karaf-features}/xml/features</bootRepository>
+                    </bootRepositories>
+                    <installedRepositories>
+                    </installedRepositories>
+                    <startupFeatures>
+                    </startupFeatures>
+                    <bootFeatures>
+                        <feature>standard</feature>
+                        <feature>wrapper</feature>
+                        <feature>maven</feature>
+                        <feature>jasypt-encryption</feature>
+                        <feature>jndi</feature>
+                        <feature>jdbc</feature>
+                        <feature>pax-jetty</feature>
+                        <feature>jetty</feature>
+                        <feature>hawtio</feature>
+                        <feature>camel</feature>
+                        <feature>camel-blueprint</feature>
+                        <feature>companion</feature>
+                    </bootFeatures>
+                    <installedFeatures>
+                    </installedFeatures>
+                </configuration>
+            </plugin>
+        </plugins>
+        
+    </build>
+    
+    <scm>
+        <connection>${scm.connection}</connection>
+        <developerConnection>${scm.developerConnection}</developerConnection>
+        <url>${scm.url}</url>
+        <tag>companion-karaf-1.0</tag>
+    </scm>
+    
+    <distributionManagement>
+        <repository>
+            <id>${distributionManagement.release.id}</id>
+            <name>${distributionManagement.release.name}</name>
+            <url>${distributionManagement.release.url}</url>
+        </repository>
+        <snapshotRepository>
+            <id>${distributionManagement.snapshot.id}</id>
+            <name>${distributionManagement.snapshot.name}</name>
+            <url>${distributionManagement.snapshot.url}</url>
+        </snapshotRepository>
+    </distributionManagement>
+    
+</project>

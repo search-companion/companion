@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<features name="companion-karaf-features-${project.version}" xmlns="http://karaf.apache.org/xmlns/features/v1.6.0">
+    <feature name="companion-zookeeper" version="${project.version}">
+        <bundle start-level="40">wrap:mvn:org.apache.zookeeper/zookeeper-jute/${zookeeper.version}$Bundle-Name=Zookeeper-jute bundle (companion) v${zookeeper.version}&amp;Bundle-SymbolicName=zookeeper-jute&amp;Bundle-Version=${zookeeper.version}&amp;Export-Package=org.apache.jute;version=${zookeeper.version},org.apache.zookeeper.data;version=${zookeeper.version},org.apache.zookeeper.proto;version=${zookeeper.version},org.apache.zookeeper.txn;version=${zookeeper.version}</bundle>
+        <bundle start-level="50">wrap:mvn:org.apache.zookeeper/zookeeper/${zookeeper.version}$Bundle-Name=Zookeeper bundle (companion) v${zookeeper.version}&amp;Bundle-SymbolicName=zookeeper&amp;Bundle-Version=${zookeeper.version}&amp;Import-Package=org.apache.jute,*;resolution:=optional&amp;Export-Package=org.apache.zookeeper;version=${zookeeper.version},org.apache.zookeeper.*;version=${zookeeper.version}</bundle>
+    </feature>
+    <feature name="companion" version="${project.version}" start-level="50">
+        <configfile override="true" finalname="${karaf.etc}/branding.properties">
+            mvn:org.search-companion/companion-karaf-features/${project.version}/properties/branding
+        </configfile>
+        <feature version="${project.version}">companion-zookeeper</feature>
+        <feature version="${project.version}">companion-dataimport-core</feature>
+        <feature version="${project.version}">companion-dataimport-example</feature>
+    </feature>
+    <feature name="companion-jdbc-solr-example" version="${project.version}">
+        <configfile override="true" finalname="${karaf.etc}/org.ops4j.datasource-solr-example.cfg">
+            mvn:org.search-companion/companion-dataimport-example/${project.version}/cfg/org.ops4j.datasource-solr-example
+        </configfile>
+        <feature>companion-zookeeper</feature>
+        <feature>pax-jdbc</feature>
+        <feature>pax-jdbc-config</feature>
+        <bundle start-level="40">wrap:mvn:commons-io/commons-io/${commons-io.version}</bundle>
+        <bundle start-level="40">mvn:org.apache.httpcomponents/httpcore-osgi/${httpcomponents-httpcore.version}</bundle>
+        <bundle start-level="40">mvn:org.apache.httpcomponents/httpclient-osgi/${httpcomponents-httpclient.version}</bundle>
+        <bundle start-level="50">wrap:mvn:org.apache.solr/solr-solrj/${solr.version}$Bundle-Name=Solr solrj bundle (companion) v${solr.version}&amp;Bundle-SymbolicName=solr-solrj&amp;Bundle-Version=${solr.version}&amp;Import-Package=org.apache.zookeeper,*;resolution:=optional&amp;Export-Package=org.apache.solr;version=${solr.version},org.apache.solr.*;version=${solr.version}</bundle>
+    </feature>
+    <feature name="companion-jdbc-db-example" version="${project.version}">
+        <configfile override="true" finalname="${karaf.etc}/org.ops4j.datasource-db-example.cfg">
+            mvn:org.search-companion/companion-dataimport-example/${project.version}/cfg/org.ops4j.datasource-db-example
+        </configfile>
+        <feature>pax-jdbc</feature>
+        <feature>pax-jdbc-config</feature>
+        <feature>pax-jdbc-pool-dbcp2</feature>
+        <feature>pax-jdbc-postgresql</feature>
+    </feature>
+    <feature name="companion-dataimport-core" version="${project.version}">
+        <feature>companion-zookeeper</feature>
+        <feature>camel-http</feature>
+        <feature>camel-jackson</feature>
+        <feature>camel-quartz</feature>
+        <feature>camel-solr</feature>
+        <feature>camel-sql</feature>
+        <feature>camel-zookeeper</feature>
+        <bundle start-level="50">mvn:com.fasterxml.jackson.datatype/jackson-datatype-jsr310/${jackson2.version}</bundle>
+        <bundle start-level="50">wrap:mvn:org.apache.solr/solr-solrj/${solr.version}$Bundle-Name=Solr solrj bundle (companion) v${solr.version}&amp;Bundle-SymbolicName=solr-solrj&amp;Bundle-Version=${solr.version}&amp;Export-Package=org.apache.solr;version=${solr.version},org.apache.solr.*;version=${solr.version}</bundle>
+        <bundle start-level="80">mvn:org.search-companion/companion-dataimport-core/${project.version}</bundle>
+    </feature>
+    <feature name="companion-dataimport-example" version="${project.version}">
+        <configfile override="true" finalname="${karaf.etc}/companion.dataimport.example.cfg">
+            mvn:org.search-companion/companion-dataimport-example/${project.version}/cfg/companion.dataimport.example
+        </configfile>
+        <feature>companion-dataimport-core</feature>
+        <feature>companion-jdbc-db-example</feature>
+        <feature>companion-jdbc-solr-example</feature>
+        <bundle>mvn:org.search-companion/companion-dataimport-example/${project.version}</bundle>
+    </feature>
+</features>
