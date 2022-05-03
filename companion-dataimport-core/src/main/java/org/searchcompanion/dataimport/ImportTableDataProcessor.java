@@ -5,9 +5,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ImportTableDataProcessor {
 
-    private int currentTableIndex = 0;
     private final List<String> tableNames;
     private final Map<String, List<Map<String, Object>>> tablesMap = new ConcurrentHashMap<>();
+
+    private int currentTableIndex = 0;
 
     private ImportTableDataProcessor() {
         this.tableNames = null;
@@ -72,7 +73,7 @@ public class ImportTableDataProcessor {
                 "%s[currentTableIndex=%d, tableNames=%s]",
                 getClass().getCanonicalName(),
                 currentTableIndex,
-                tableNamesStringBuilder.toString()
+                tableNamesStringBuilder
         );
     }
 

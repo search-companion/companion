@@ -2,24 +2,25 @@ package org.searchcompanion.dataimport;
 
 import org.apache.camel.Exchange;
 import org.apache.camel.component.solr.SolrConstants;
+import org.apache.camel.util.Pair;
 import org.apache.solr.common.SolrInputDocument;
 
 import java.util.List;
 import java.util.Map;
 
-public class SolrMapperImpl extends SolrMapperBase {
+public class SolrMapperImpl extends SolrMapper {
 
-    public SolrMapperResult mapTablesDataToSolrMapperResult(Exchange exchange, Map<String, List<Map<String, Object>>> tablesData, Map<String, Map<String, String>> tablesFieldsMap) {
+    public Pair<Object> mapTablesDataToSolrMapperResult(Exchange exchange, Map<String, List<Map<String, Object>>> tablesData, Map<String, Map<String, String>> tablesFieldsMap) {
         String documentId = exchange.getMessage().getHeader("ProcessId", String.class);
         ImportTableDataProcessor importTableDataProcessor = exchange.getMessage().getHeader("importTableDataProcessor", ImportTableDataProcessor.class);
         String masterTableName = importTableDataProcessor.getTableNames().get(0);
         if (isDeleteFlagSet(masterTableName, tablesData, tablesFieldsMap)) {
-            return new SolrMapperResult(
+            return new Pair<>(
                     SolrConstants.OPERATION_DELETE_BY_QUERY,
                     documentId
             );
         }
-        return new SolrMapperResult(
+        return new Pair<>(
                 SolrConstants.OPERATION_INSERT_STREAMING,
                 mapTablesDataToSolrDocument(documentId, importTableDataProcessor.getTableNames(), tablesData, tablesFieldsMap)
         );
@@ -69,9 +70,7 @@ public class SolrMapperImpl extends SolrMapperBase {
                         )
                     );
                 }
-                if (isValueForDelete(masterTableRecords.get(0).get(fieldNameWithDeleteFlag))) {
-                    return true;
-                }
+                return isValueForDelete(masterTableRecords.get(0).get(fieldNameWithDeleteFlag));
             }
         }
         return false;

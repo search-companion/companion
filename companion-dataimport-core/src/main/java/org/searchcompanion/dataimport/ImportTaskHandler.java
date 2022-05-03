@@ -4,6 +4,7 @@ import org.apache.camel.CamelContext;
 import org.apache.camel.Exchange;
 import org.apache.camel.component.solr.SolrConstants;
 import org.apache.camel.spi.PropertiesComponent;
+import org.apache.camel.util.Pair;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.util.StrUtils;
 
@@ -39,7 +40,7 @@ public class ImportTaskHandler {
         isApplySolrCommit = Boolean.parseBoolean(propertiesComponent.resolveProperty("solr.commit").orElse("true"));
         nrOfCollectionsToKeep = Integer.parseInt(propertiesComponent.resolveProperty("solr.collection.keep").orElse("0"));
         String tables = propertiesComponent.resolveProperty("sql.data.tables").get();
-        List<String> entries = Arrays.asList(tables.split(","));
+        String[] entries = tables.split(",");
         List<String> newTableNames = new ArrayList<>();
         for (String entry : entries) {
             if (!entry.trim().isEmpty()) {
@@ -54,8 +55,7 @@ public class ImportTaskHandler {
             tablesFieldsMap.put(s, getMapperFields(fieldsMapString));
         }
         String fieldNameWithDeleteFlag = propertiesComponent.resolveProperty("mapper.field.deleteflag").get();
-        if (fieldNameWithDeleteFlag != null
-                && !fieldNameWithDeleteFlag.isEmpty()) {
+        if (!fieldNameWithDeleteFlag.isEmpty()) {
             tablesFieldsMap.put(SolrMapper.DELETEFLAG_TABLE_PLACEHOLDER, Collections.singletonMap(SolrMapper.DELETEFLAG_FIELD_PLACEHOLDER, fieldNameWithDeleteFlag));
         }
         if (tableNames.isEmpty()
@@ -82,11 +82,11 @@ public class ImportTaskHandler {
 
     public Map<String, String> getMapperFields(String mapperFieldString) {
         Map<String, String> mapperFields = new LinkedHashMap<>();
-        List<String> entries = Arrays.asList(mapperFieldString.split(","));
+        String[] entries = mapperFieldString.split(",");
         for (String entry : entries) {
             if (entry.contains(":")) {
                 String[] entries1 = entry.split(":");
-                if (!entries1[0].trim().isEmpty() && !entries1[0].trim().isEmpty()) {
+                if (!entries1[0].trim().isEmpty() && !entries1[1].trim().isEmpty()) {
                     mapperFields.put(entries1[0].trim(), entries1[1].trim());
                 }
             } else {
@@ -152,7 +152,7 @@ public class ImportTaskHandler {
                     exchange.getProperty("ImportType", String.class).equals(ImportTask.ImportType.FULL.name())) {
                 requestInfo = "FULL";
             } else {
-                requestInfo = String.format("DELTA (timerCounter=%d)", exchange.getProperty(Exchange.TIMER_COUNTER));
+                requestInfo = String.format("DELTA (timerCounter=%d)", exchange.getProperty(Exchange.TIMER_COUNTER, Long.class));
             }
             exchange.getMessage().setHeader(
                     "skipProcessingMessage",
@@ -383,9 +383,9 @@ public class ImportTaskHandler {
     public void mapTablesToSolrDocument(Exchange exchange) {
         // Perform mapping
         ImportTableDataProcessor importTableDataProcessor = exchange.getMessage().getHeader("importTableDataProcessor", ImportTableDataProcessor.class);
-        SolrMapperResult solrMapperResult = solrMapper.mapTablesDataToSolrMapperResult(exchange, importTableDataProcessor.getTablesMap(), tablesFieldsMap);
-        exchange.getMessage().setHeader("SolrOperation", solrMapperResult.getSolrOperation());
-        exchange.getMessage().setBody(solrMapperResult.getObject());
+        Pair<Object> solrMapperResult = solrMapper.mapTablesDataToSolrMapperResult(exchange, importTableDataProcessor.getTablesMap(), tablesFieldsMap);
+        exchange.getMessage().setHeader("SolrOperation", solrMapperResult.getLeft());
+        exchange.getMessage().setBody(solrMapperResult.getRight());
         // clean processor from exchange
         exchange.getMessage().removeHeader("importTableDataProcessor");
         // increment document counter on ImportTask
