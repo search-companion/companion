@@ -52,9 +52,9 @@
                                     <classifier>companion.dataimport.example</classifier>
                                 </artifact>
                                 <artifact>
-                                    <file>${project.build.outputDirectory}/etc/org.ops4j.datasource-db-example.cfg</file>
+                                    <file>${project.build.outputDirectory}/etc/org.ops4j.datasource-postgres-example.cfg</file>
                                     <type>cfg</type>
-                                    <classifier>org.ops4j.datasource-db-example</classifier>
+                                    <classifier>org.ops4j.datasource-postgres-example</classifier>
                                 </artifact>
                                 <artifact>
                                     <file>${project.build.outputDirectory}/etc/org.ops4j.datasource-solr-example.cfg</file>

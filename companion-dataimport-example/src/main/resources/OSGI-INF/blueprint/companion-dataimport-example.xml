@@ -33,10 +33,10 @@
         <route id="startup-example-initialization" startupOrder="0">
             <from uri="timer:startup-example?repeatCount=1&amp;delay=0"/>
             <setHeader name="CamelHttpQuery">
-                <simple>action=CREATE&amp;name={{solr.collection}}&amp;{{solr.collection.create.params.{{env:COMPANION_ROLE:dev}}}}</simple>
+                <simple>action=CREATE&amp;name={{solr.collection}}&amp;{{solr.collection.create.params}}</simple>
             </setHeader>
             <doTry>
-                <to uri="{{solr.httpbaseurl.{{env:COMPANION_ROLE:dev}}}}/admin/collections"/>
+                <to uri="{{solr.httpbaseurl}}/admin/collections"/>
                 <log message="Solr collection '{{solr.collection}}' created.\n${body}"/>
                 <doCatch>
                     <exception>java.lang.Exception</exception>

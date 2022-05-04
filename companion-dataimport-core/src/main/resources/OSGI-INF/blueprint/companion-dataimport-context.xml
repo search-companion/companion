@@ -11,12 +11,12 @@
     <routeContext id="companion-dataimport-route-context" xmlns="http://camel.apache.org/schema/blueprint">
     
         <route id="data-import-properties-get" startupOrder="1">
-            <from uri="{{importtask.file.uri.{{env:COMPANION_ROLE:dev}}}}"/>
+            <from uri="{{importtask.file.uri}}"/>
             <to uri="bean:handler?method=setImportTaskFromFile"/>
             <filter>
                 <simple>${exchangeProperty.ImportTask}</simple>
                 <log loggingLevel="INFO"
-                     message="Retrieved ImportTask file from {{importtask.file.uri.{{env:COMPANION_ROLE:dev}}}} ${exchangeProperty.ImportTask}."/>
+                     message="Retrieved ImportTask file from {{importtask.file.uri}} ${exchangeProperty.ImportTask}."/>
             </filter>
         </route>
         
@@ -26,7 +26,7 @@
             <setBody>
                 <simple resultType="String">${exchangeProperty.ImportTask}</simple>
             </setBody>
-            <to uri="{{importtask.file.uri.{{env:COMPANION_ROLE:dev}}}}"/>
+            <to uri="{{importtask.file.uri}}"/>
         </route>
     
         <route id="monitor-zk-client">
@@ -67,12 +67,12 @@
                         <when>
                             <simple>${header.CamelTimerCounter} > 1</simple>
                             <log loggingLevel="WARN"
-                                 message="No ImportTask file retrieved. New ImportTask file initiated in {{importtask.file.uri.{{env:COMPANION_ROLE:dev}}}}. ImportTask file should be available in next cycle."/>
+                                 message="No ImportTask file retrieved. New ImportTask file initiated in {{importtask.file.uri}}. ImportTask file should be available in next cycle."/>
                             <to uri="direct:data-import-properties-save"/>
                         </when>
                         <otherwise>
                             <log loggingLevel="WARN"
-                                 message="ImportTask file not retrieved from {{importtask.file.uri.{{env:COMPANION_ROLE:dev}}}}. Waiting 1 cycle to become available."/>
+                                 message="ImportTask file not retrieved from {{importtask.file.uri}}. Waiting 1 cycle to become available."/>
                         </otherwise>
                     </choice>
                 </otherwise>
@@ -116,7 +116,7 @@
             <filter>
                 <simple>${bean:handler?method=isUseAliasHandling}</simple>
                 <setHeader name="CamelHttpQuery">
-                    <simple>action=CREATE&amp;name=${exchangeProperty.ImportTask.collection}&amp;{{solr.collection.create.params.{{env:COMPANION_ROLE:dev}}}}</simple>
+                    <simple>action=CREATE&amp;name=${exchangeProperty.ImportTask.collection}&amp;{{solr.collection.create.params}}</simple>
                 </setHeader>
                 <to uri="direct:solr-collections-api"/>
                 <log message="Solr collection '${exchangeProperty.ImportTask.collection}' created.\n${body}"/>
@@ -319,11 +319,11 @@
             <from uri="direct:solr-collections-api"/>
             <choice>
                 <when>
-                    <simple>'{{solr.httpbaseurl.{{env:COMPANION_ROLE:dev}}}}' startsWith 'https'</simple>
-                    <to uri="{{solr.httpbaseurl.{{env:COMPANION_ROLE:dev}}}}/admin/collections?useGlobalSslContextParameters=true&amp;authenticationPreemptive=true"/>
+                    <simple>'{{solr.httpbaseurl}}' startsWith 'https'</simple>
+                    <to uri="{{solr.httpbaseurl}}/admin/collections?useGlobalSslContextParameters=true&amp;authenticationPreemptive=true"/>
                 </when>
                 <otherwise>
-                    <to id="endpoint-solr-collections-api" uri="{{solr.httpbaseurl.{{env:COMPANION_ROLE:dev}}}}/admin/collections"/>
+                    <to id="endpoint-solr-collections-api" uri="{{solr.httpbaseurl}}/admin/collections"/>
                 </otherwise>
             </choice>
         </route>
@@ -334,7 +334,7 @@
             <split>
                 <simple>${body}</simple>
                 <setHeader name="spellcheck-dictionary"><simple>${body}</simple></setHeader>
-                <setHeader name="spellcheck-delay"><constant>{{solr.spellcheck.delay.{{env:COMPANION_ROLE:dev}}:1000}}</constant></setHeader>
+                <setHeader name="spellcheck-delay"><constant>{{solr.spellcheck.delay:1000}}</constant></setHeader>
                 <log message="Spellcheck rebuild for '${header.spellcheck-dictionary}' started (incl delay ${header.spellcheck-delay} ms)"/>
                 <delay><simple>${header.spellcheck-delay}</simple></delay>
                 <removeHeaders pattern="CamelHttp*"/>
@@ -342,16 +342,16 @@
                     <simple>${properties:solr.spellcheck.query.${header.spellcheck-dictionary}:}</simple>
                 </setHeader>
                 <setHeader name="CamelHttpUri">
-                    <simple>{{solr.httpbaseurl.{{env:COMPANION_ROLE:dev}}}}/${exchangeProperty.ImportTask.collection}${properties:solr.spellcheck.path:/spell}</simple>
+                    <simple>{{solr.httpbaseurl}}/${exchangeProperty.ImportTask.collection}${properties:solr.spellcheck.path:/spell}</simple>
                 </setHeader>
-                <to uri="{{solr.httpbaseurl.{{env:COMPANION_ROLE:dev}}}}?useGlobalSslContextParameters=true&amp;authenticationPreemptive=true"/>
+                <to uri="{{solr.httpbaseurl}}?useGlobalSslContextParameters=true&amp;authenticationPreemptive=true"/>
                 <log message="Solr spellcheck for (${header.spellcheck-dictionary}) built."/>
             </split>
         </route>
     
         <route id="solr-route">
             <from uri="direct:solr-route"/>
-            <toD uri="{{solr.solrbaseurl.{{env:COMPANION_ROLE:dev}}}}/${exchangeProperty.ImportTask.collection}"/>
+            <toD uri="{{solr.solrbaseurl}}/${exchangeProperty.ImportTask.collection}"/>
         </route>
     
     </routeContext>

@@ -25,8 +25,8 @@
         <bundle start-level="50">wrap:mvn:org.apache.solr/solr-solrj/${solr.version}$Bundle-Name=Solr solrj bundle (companion) v${solr.version}&amp;Bundle-SymbolicName=solr-solrj&amp;Bundle-Version=${solr.version}&amp;Import-Package=org.apache.zookeeper,*;resolution:=optional&amp;Export-Package=org.apache.solr;version=${solr.version},org.apache.solr.*;version=${solr.version}</bundle>
     </feature>
     <feature name="companion-jdbc-db-example" version="${project.version}">
-        <configfile override="true" finalname="${karaf.etc}/org.ops4j.datasource-db-example.cfg">
-            mvn:org.search-companion/companion-dataimport-example/${project.version}/cfg/org.ops4j.datasource-db-example
+        <configfile override="true" finalname="${karaf.etc}/org.ops4j.datasource-postgres-example.cfg">
+            mvn:org.search-companion/companion-dataimport-example/${project.version}/cfg/org.ops4j.datasource-postgres-example
         </configfile>
         <feature>pax-jdbc</feature>
         <feature>pax-jdbc-config</feature>
