@@ -4,7 +4,7 @@
     
     <groupId>org.search-companion</groupId>
     <artifactId>companion</artifactId>
-    <version>0.8.1</version>
+    <version>0.8.2-SNAPSHOT</version>
     
     <name>Search Companion</name>
     <description>Search Companion</description>
@@ -35,7 +35,7 @@
         <connection>${scm.connection}</connection>
         <developerConnection>${scm.developerConnection}</developerConnection>
         <url>${scm.url}</url>
-        <tag>companion-0.8.1</tag>
+        <tag>HEAD</tag>
     </scm>
     
     <distributionManagement>
