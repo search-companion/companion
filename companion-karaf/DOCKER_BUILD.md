@@ -10,7 +10,7 @@ docker rmi "${IMAGE_NAME}"
 ```
 ### Generate karaf tar.gz
 ```
-mvn clean install
+mvn clean release:prepare release:perform
 ```
 ### Generate docker image
 ```
