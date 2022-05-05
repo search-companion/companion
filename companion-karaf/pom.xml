@@ -139,24 +139,4 @@
         
     </build>
     
-    <scm>
-        <connection>${scm.connection}</connection>
-        <developerConnection>${scm.developerConnection}</developerConnection>
-        <url>${scm.url}</url>
-        <tag>companion-karaf-1.0</tag>
-    </scm>
-    
-    <distributionManagement>
-        <repository>
-            <id>${distributionManagement.release.id}</id>
-            <name>${distributionManagement.release.name}</name>
-            <url>${distributionManagement.release.url}</url>
-        </repository>
-        <snapshotRepository>
-            <id>${distributionManagement.snapshot.id}</id>
-            <name>${distributionManagement.snapshot.name}</name>
-            <url>${distributionManagement.snapshot.url}</url>
-        </snapshotRepository>
-    </distributionManagement>
-    
 </project>
