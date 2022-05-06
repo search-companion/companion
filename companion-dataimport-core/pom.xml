@@ -3,9 +3,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <artifactId>companion</artifactId>
+        <artifactId>companion-camel-parent</artifactId>
         <groupId>org.search-companion</groupId>
         <version>0.8.2-SNAPSHOT</version>
+        <relativePath>../companion-camel-parent</relativePath>
     </parent>
     
     <artifactId>companion-dataimport-core</artifactId>
@@ -14,75 +15,8 @@
     
     <packaging>bundle</packaging>
     
-    <dependencyManagement>
-        
-        <dependencies>
-            <dependency>
-                <artifactId>companion-camel-bom</artifactId>
-                <groupId>org.search-companion</groupId>
-                <version>${project.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-        
-    </dependencyManagement>
-    
     <dependencies>
-        
-        <dependency>
-            <artifactId>companion-camel-bom</artifactId>
-            <groupId>org.search-companion</groupId>
-            <version>${project.version}</version>
-            <type>pom</type>
-            <scope>provided</scope>
-        </dependency>
-        <!-- camel components -->
-        <dependency>
-            <groupId>org.apache.camel</groupId>
-            <artifactId>camel-http</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.camel</groupId>
-            <artifactId>camel-jackson</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.camel</groupId>
-            <artifactId>camel-solr</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.camel</groupId>
-            <artifactId>camel-sql</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.camel</groupId>
-            <artifactId>camel-zookeeper</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <!-- non-camel -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>${jackson2.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <!-- testing -->
-        <dependency>
-            <groupId>org.apache.camel</groupId>
-            <artifactId>camel-test</artifactId>
-            <version>${camel-test.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.camel.karaf</groupId>
-            <artifactId>camel-test-blueprint</artifactId>
-            <version>${camel-test.version}</version>
-            <scope>test</scope>
-        </dependency>
+
         <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-test</artifactId>
@@ -102,32 +36,7 @@
             <version>${derby.version}</version>
             <scope>test</scope>
         </dependency>
-        <!-- logging implementation -->
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j-impl</artifactId>
-            <version>${log4j.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <version>${log4j.version}</version>
-            <scope>test</scope>
-        </dependency>
 
     </dependencies>
-    
-    <build>
-        
-        <plugins>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-            </plugin>
-        </plugins>
-    
-    </build>
-
 
 </project>

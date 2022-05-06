@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <artifactId>companion-camel-parent</artifactId>
+        <groupId>org.search-companion</groupId>
+        <version>0.8.2-SNAPSHOT</version>
+        <relativePath>../companion-camel-parent</relativePath>
+    </parent>
+    
+    <artifactId>companion-camel-core</artifactId>
+    <name>Search Companion :: Camel :: Core</name>
+    <description>Search Companion Camel Core</description>
+    
+    <packaging>bundle</packaging>
+    
+</project>

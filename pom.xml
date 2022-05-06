@@ -14,7 +14,8 @@
     <packaging>pom</packaging>
     
     <modules>
-        <module>companion-camel-bom</module>
+        <module>companion-camel-parent</module>
+        <module>companion-camel-core</module>
         <module>companion-dataimport-core</module>
         <module>companion-dataimport-example</module>
         <module>companion-karaf-features</module>

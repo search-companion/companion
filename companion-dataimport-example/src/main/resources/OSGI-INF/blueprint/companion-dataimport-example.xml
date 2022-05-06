@@ -16,7 +16,7 @@
         <property name="dataSource" ref="ds"/>
     </bean>
     
-    <bean id="handler" class="org.searchcompanion.dataimport.ImportTaskHandler"/>
+    <bean id="handler" class="org.searchcompanion.dataimport.ImportTaskController"/>
     
     <camelContext id="companion-dataimport-example"
                   xmlns="http://camel.apache.org/schema/blueprint"

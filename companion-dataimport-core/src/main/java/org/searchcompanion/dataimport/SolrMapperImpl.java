@@ -12,8 +12,8 @@ public class SolrMapperImpl extends SolrMapper {
 
     public Pair<Object> mapTablesDataToSolrMapperResult(Exchange exchange, Map<String, List<Map<String, Object>>> tablesData, Map<String, Map<String, String>> tablesFieldsMap) {
         String documentId = exchange.getMessage().getHeader("ProcessId", String.class);
-        ImportTableDataProcessor importTableDataProcessor = exchange.getMessage().getHeader("importTableDataProcessor", ImportTableDataProcessor.class);
-        String masterTableName = importTableDataProcessor.getTableNames().get(0);
+        TableDataProcessor tableDataProcessor = exchange.getMessage().getHeader("tableDataProcessor", TableDataProcessor.class);
+        String masterTableName = tableDataProcessor.getTableNames().get(0);
         if (isDeleteFlagSet(masterTableName, tablesData, tablesFieldsMap)) {
             return new Pair<>(
                     SolrConstants.OPERATION_DELETE_BY_QUERY,
@@ -22,7 +22,7 @@ public class SolrMapperImpl extends SolrMapper {
         }
         return new Pair<>(
                 SolrConstants.OPERATION_INSERT_STREAMING,
-                mapTablesDataToSolrDocument(documentId, importTableDataProcessor.getTableNames(), tablesData, tablesFieldsMap)
+                mapTablesDataToSolrDocument(documentId, tableDataProcessor.getTableNames(), tablesData, tablesFieldsMap)
         );
     }
 

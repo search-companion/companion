@@ -3,18 +3,18 @@ package org.searchcompanion.dataimport;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ImportTableDataProcessor {
+public class TableDataProcessor {
 
     private final List<String> tableNames;
     private final Map<String, List<Map<String, Object>>> tablesMap = new ConcurrentHashMap<>();
 
     private int currentTableIndex = 0;
 
-    private ImportTableDataProcessor() {
+    private TableDataProcessor() {
         this.tableNames = null;
     }
 
-    public ImportTableDataProcessor(List<String> tableNames) {
+    public TableDataProcessor(List<String> tableNames) {
         this.tableNames = Collections.unmodifiableList(new ArrayList<>(tableNames));
     }
 

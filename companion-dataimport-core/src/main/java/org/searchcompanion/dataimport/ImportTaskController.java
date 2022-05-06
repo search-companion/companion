@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
 
-public class ImportTaskHandler {
+public class ImportTaskController {
 
     private String solrCollection = null;
     private List<String> tableNames = null;
@@ -334,20 +334,20 @@ public class ImportTaskHandler {
     }
 
     public boolean hasNextTable(Exchange exchange) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
-        ImportTableDataProcessor importTableDataProcessor = exchange.getMessage().getHeader("importTableDataProcessor", ImportTableDataProcessor.class);
+        TableDataProcessor tableDataProcessor = exchange.getMessage().getHeader("tableDataProcessor", TableDataProcessor.class);
         if (tableNames == null) {
             initializeWith(exchange.getContext());
         }
-        if (importTableDataProcessor == null) {
-            importTableDataProcessor = new ImportTableDataProcessor(tableNames);
-            exchange.getMessage().setHeader("importTableDataProcessor", importTableDataProcessor);
+        if (tableDataProcessor == null) {
+            tableDataProcessor = new TableDataProcessor(tableNames);
+            exchange.getMessage().setHeader("tableDataProcessor", tableDataProcessor);
         }
         exchange.getMessage().setBody(null);
-        if (!importTableDataProcessor.hasNextTable()) {
+        if (!tableDataProcessor.hasNextTable()) {
             exchange.getMessage().removeHeader("CamelSqlQuery");
             return false;
         }
-        exchange.getMessage().setHeader("CamelSqlQuery", tablesSql.get(importTableDataProcessor.getCurrentTableName()));
+        exchange.getMessage().setHeader("CamelSqlQuery", tablesSql.get(tableDataProcessor.getCurrentTableName()));
         return true;
     }
 
@@ -365,29 +365,29 @@ public class ImportTaskHandler {
     }
 
     public void appendDataToTablesProcessor(Exchange exchange) {
-        ImportTableDataProcessor importTableDataProcessor = exchange.getMessage().getHeader("importTableDataProcessor", ImportTableDataProcessor.class);
+        TableDataProcessor tableDataProcessor = exchange.getMessage().getHeader("tableDataProcessor", TableDataProcessor.class);
         List<Map<String, Object>> records = exchange.getMessage().getBody(List.class);
         if (records == null) {
             throw new IllegalStateException(
                     String.format(
                             "Error retrieving data records for document ID '%s' from table '%s'",
                             exchange.getMessage().getHeader("ProcessId"),
-                            importTableDataProcessor.getCurrentTableName()
+                            tableDataProcessor.getCurrentTableName()
                     )
             );
         }
-        importTableDataProcessor.appendToTablesMap(importTableDataProcessor.getCurrentTableName(), records);
-        int nextTable = importTableDataProcessor.incrementTableIndex();
+        tableDataProcessor.appendToTablesMap(tableDataProcessor.getCurrentTableName(), records);
+        int nextTable = tableDataProcessor.incrementTableIndex();
     }
 
     public void mapTablesToSolrDocument(Exchange exchange) {
         // Perform mapping
-        ImportTableDataProcessor importTableDataProcessor = exchange.getMessage().getHeader("importTableDataProcessor", ImportTableDataProcessor.class);
-        Pair<Object> solrMapperResult = solrMapper.mapTablesDataToSolrMapperResult(exchange, importTableDataProcessor.getTablesMap(), tablesFieldsMap);
+        TableDataProcessor tableDataProcessor = exchange.getMessage().getHeader("tableDataProcessor", TableDataProcessor.class);
+        Pair<Object> solrMapperResult = solrMapper.mapTablesDataToSolrMapperResult(exchange, tableDataProcessor.getTablesMap(), tablesFieldsMap);
         exchange.getMessage().setHeader("SolrOperation", solrMapperResult.getLeft());
         exchange.getMessage().setBody(solrMapperResult.getRight());
         // clean processor from exchange
-        exchange.getMessage().removeHeader("importTableDataProcessor");
+        exchange.getMessage().removeHeader("tableDataProcessor");
         // increment document counter on ImportTask
         if (exchange.getProperty("ImportTask") != null) {
             exchange.getProperty("ImportTask", ImportTask.class).incrementDocumentCounter();

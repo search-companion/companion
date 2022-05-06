@@ -501,8 +501,8 @@ public class DataImportTest extends CamelBlueprintTestSupport {
 
     @Test
     public void importByIDTest() throws Exception {
-        ImportTaskHandler importTaskHandler = (ImportTaskHandler) context.getRegistry().lookupByName("handler");
-        importTaskHandler.initializeWith(context);
+        ImportTaskController importTaskController = (ImportTaskController) context.getRegistry().lookupByName("handler");
+        importTaskController.initializeWith(context);
         MockEndpoint mockDataImportProcessId = getMockEndpoint("mock:data-import-process-id");
         mockDataImportProcessId.expectedMinimumMessageCount(1);
         // invalid ID
@@ -543,12 +543,12 @@ public class DataImportTest extends CamelBlueprintTestSupport {
 
     @Test
     public void skipProcessingWhenBusyTest() throws Exception {
-        ImportTaskHandler importTaskHandler = (ImportTaskHandler) context.getRegistry().lookupByName("handler");
-        importTaskHandler.initializeWith(context);
+        ImportTaskController importTaskController = (ImportTaskController) context.getRegistry().lookupByName("handler");
+        importTaskController.initializeWith(context);
         ImportTask importTask1 = new ImportTask();
         importTask1.setProcessing(true);
         importTask1.setCollection("mytest");
-        importTaskHandler.setImportTask(importTask1);
+        importTaskController.setImportTask(importTask1);
         Exchange exchange1 =
                 ExchangeBuilder
                         .anExchange(context)
@@ -584,7 +584,7 @@ public class DataImportTest extends CamelBlueprintTestSupport {
         MockEndpoint mock = getMockEndpoint("mock:data-import-process-start");
         mock.expectedMinimumMessageCount(1);
 
-        ImportTaskHandler importTaskHandler = (ImportTaskHandler) context.getRegistry().lookupByName("handler");
+        ImportTaskController importTaskController = (ImportTaskController) context.getRegistry().lookupByName("handler");
         ImportTask importTask1 = new ImportTask();
         importTask1.setImportType(ImportTask.ImportType.DELTA);
         importTask1.setTimerCounter(61);
@@ -595,7 +595,7 @@ public class DataImportTest extends CamelBlueprintTestSupport {
         ImportTask importTask2 = new ImportTask();
         importTask2.setImportType(ImportTask.ImportType.DELTA);
         importTask2.setTimerCounter(65);
-        importTaskHandler.setImportTask(importTask2);
+        importTaskController.setImportTask(importTask2);
 
         templateMonitorZkClient.sendBody("trigger");
         mock.assertIsSatisfied();
