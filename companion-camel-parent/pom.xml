@@ -57,6 +57,11 @@
                 <artifactId>camel-test-blueprint</artifactId>
                 <version>${camel-test.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.camel</groupId>
+                <artifactId>camel-management</artifactId>
+                <version>${camel.version}</version>
+            </dependency>
 
             <!-- logging implementation -->
             <dependency>
@@ -129,12 +134,24 @@
             <groupId>org.apache.camel</groupId>
             <artifactId>camel-zookeeper</artifactId>
         </dependency>
-    
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-jetty</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-swagger-java</artifactId>
+        </dependency>
+        
         <!-- non-camel -->
         <dependency>
             <groupId>org.apache.solr</groupId>
             <artifactId>solr-solrj</artifactId>
             <exclusions>
+                <exclusion>
+                    <groupId>io.netty</groupId>
+                    <artifactId>netty-common</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>org.xerial.snappy</groupId>
                     <artifactId>snappy-java</artifactId>
@@ -152,13 +169,17 @@
             <artifactId>camel-test</artifactId>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>org.apache.camel.karaf</groupId>
             <artifactId>camel-test-blueprint</artifactId>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-management</artifactId>
+            <scope>test</scope>
+        </dependency>
+        
         <!-- logging implementation -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:cm="http://aries.apache.org/blueprint/xmlns/blueprint-cm/v1.4.0"
+           xsi:schemaLocation="
+         http://www.osgi.org/xmlns/blueprint/v1.0.0 https://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+         http://camel.apache.org/schema/blueprint https://camel.apache.org/schema/blueprint/camel-blueprint.xsd">
+
+    <cm:property-placeholder persistent-id="companion.rest" placeholder-prefix="$rest{" update-strategy="reload"/>
+    
+    <bean id="loginService" class="org.eclipse.jetty.jaas.JAASLoginService">
+        <property name="name" value="karaf login module"/>
+        <property name="loginModuleName" value="karaf"/>
+        <property name="roleClassNames">
+            <list>
+                <value>org.apache.karaf.jaas.boot.principal.RolePrincipal</value>
+            </list>
+        </property>
+    </bean>
+    
+    <bean id="identityService" class="org.eclipse.jetty.security.DefaultIdentityService"/>
+    
+    <bean id="constraint" class="org.eclipse.jetty.util.security.Constraint">
+        <property name="name" value="BASIC"/>
+        <property name="roles">
+            <list>
+                <value>restapi</value>
+            </list>
+        </property>
+        <property name="authenticate" value="true"/>
+    </bean>
+    
+    <!-- required for api security implementation -->
+    <bean id="constraintMapping" class="org.eclipse.jetty.security.ConstraintMapping">
+        <property name="constraint" ref="constraint"/>
+        <property name="pathSpec" value="/api/*"/>
+    </bean>
+    
+    <bean id="securityHandler" class="org.eclipse.jetty.security.ConstraintSecurityHandler">
+        <property name="authenticator">
+            <bean class="org.eclipse.jetty.security.authentication.BasicAuthenticator"/>
+        </property>
+        <property name="constraintMappings">
+            <list>
+                <ref component-id="constraintMapping"/>
+            </list>
+        </property>
+        <property name="loginService" ref="loginService"/>
+        <property name="identityService" ref="identityService"/>
+    </bean>
+    
+    <camelContext id="companion-rest" trace="{{rest.trace}}" xmlns="http://camel.apache.org/schema/blueprint">
+    
+        <packageScan>
+            <package>org.searchcompanion.rest</package>
+            <excludes>*Test</excludes>
+            <includes>*RouteBuilder</includes>
+        </packageScan>
+
+        <onException>
+            <exception>java.io.IOException</exception>
+            <exception>java.lang.Exception</exception>
+            <handled><constant>true</constant></handled>
+            <setHeader name="CamelHttpResponseCode"><constant>400</constant></setHeader>
+            <setHeader name="Content-Type"><constant>application/json</constant></setHeader>
+            <setBody><constant>Could not handle request</constant></setBody>
+        </onException>
+
+        <restConfiguration
+                component="jetty"
+                bindingMode="auto"
+                contextPath="{{rest.context-path}}"
+                apiContextPath="/api-doc"
+                port="{{rest.port}}"
+                enableCORS="true"
+                clientRequestValidation="true"
+        >
+            <endpointProperty key="handlers" value="#securityHandler"/>
+            <dataFormatProperty key="prettyPrint" value="true"/>
+            <apiProperty key="api.title" value="{{rest.api.title}}"/>
+            <apiProperty key="api.description" value="{{rest.api.description}}"/>
+            <apiProperty key="api.version" value="{{rest.api.version}}"/>
+            <apiProperty key="api.contact.name" value="{{rest.api.contact.name}}"/>
+            <apiProperty key="api.contact.email" value="{{rest.api.contact.email}}"/>
+
+        </restConfiguration>
+        
+        <rest>
+            <securityDefinitions>
+                <basicAuth key="basicAuth"/>
+            </securityDefinitions>
+        </rest>
+
+    </camelContext>
+
+</blueprint>

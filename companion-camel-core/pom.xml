@@ -15,4 +15,45 @@
     
     <packaging>bundle</packaging>
     
+    <dependencies>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-jaas</artifactId>
+            <version>9.4.38.v20210224</version>
+            <scope>runtime</scope>
+        </dependency>
+    </dependencies>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-feature-config</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>attach-artifact</goal>
+                        </goals>
+                        <configuration>
+                            <artifacts>
+                                <artifact>
+                                    <file>src/main/resources/companion.core.cfg</file>
+                                    <type>cfg</type>
+                                    <classifier>companion.core</classifier>
+                                </artifact>
+                                <artifact>
+                                    <file>src/main/resources/companion.rest.cfg</file>
+                                    <type>cfg</type>
+                                    <classifier>companion.rest</classifier>
+                                </artifact>
+                            </artifacts>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>

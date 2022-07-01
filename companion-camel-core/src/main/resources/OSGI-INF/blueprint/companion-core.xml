@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:cm="http://aries.apache.org/blueprint/xmlns/blueprint-cm/v1.4.0"
+           xsi:schemaLocation="
+         http://www.osgi.org/xmlns/blueprint/v1.0.0 https://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+         http://camel.apache.org/schema/blueprint https://camel.apache.org/schema/blueprint/camel-blueprint.xsd">
+
+    <cm:property-placeholder persistent-id="companion.core" placeholder-prefix="$core{" update-strategy="reload"/>
+    
+    <camelContext id="companion-core" trace="{{core.trace}}" xmlns="http://camel.apache.org/schema/blueprint">
+    
+        <packageScan>
+            <package>org.searchcompanion.core</package>
+            <excludes>*Test</excludes>
+            <includes>*RouteBuilder</includes>
+        </packageScan>
+    
+        <route id="error-handling">
+            <from uri="direct:error-handling"/>
+            <onException>
+                <exception>java.lang.Exception</exception>
+                <to uri="log:dead?level=ERROR"/>
+            </onException>
+            <setBody><simple>Error processing rest-api\n${headers}\n\n${exception}</simple></setBody>
+            <to uri="log:rest-api?level=ERROR"/>
+        </route>
+
+
+    </camelContext>
+
+</blueprint>
