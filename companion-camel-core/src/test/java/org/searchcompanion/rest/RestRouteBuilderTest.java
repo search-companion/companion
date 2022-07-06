@@ -25,8 +25,8 @@ public class RestRouteBuilderTest extends CamelBlueprintTestSupport {
     @Override
     public String[] loadConfigAdminConfigurationFile() {
         return new String[]{
-                "src/main/resources/companion.rest.cfg",
-                "companion.rest"
+                "src/test/resources/companion.core.cfg",
+                "companion.core"
         };
     }
 
@@ -45,10 +45,10 @@ public class RestRouteBuilderTest extends CamelBlueprintTestSupport {
         context.addRoutes(new RouteBuilder() {
             @Override
             public void configure() {
-                from("direct-vm:rest-task")
-                        .id("rest-task")
+                from("direct:task-init")
+                        .id("test-rest-task")
                         .log(LoggingLevel.INFO, "Task request received from REST API:\nheaders: ${headers}\npayload: ${body}")
-                        .to("mock:rest-task")
+                        .to("mock:test-rest-task")
                         .process(exchange -> {
                             Map<String, Object> response = new LinkedHashMap<>();
                             response.put("status", SC_OK);
@@ -56,12 +56,11 @@ public class RestRouteBuilderTest extends CamelBlueprintTestSupport {
                             response.put("collection", exchange.getMessage().getHeader("collection"));
                             exchange.getMessage().setBody(response);
                         });
-                from("direct:http-test-endpoint")
-                        .id("http-test-client-route")
+                from("direct:test-generate-http-client-request")
                         .setHeader(Exchange.HTTP_QUERY, constant("action=testAction"))
                         .to("http://localhost:{{rest.port}}{{rest.context-path}}/c/testCollection1")
                         .setBody(simple("${bodyAs(String)}"))
-                        .to("mock:http-test-response")
+                        .to("mock:test-http-client-response")
                         .log(LoggingLevel.INFO, "Task response received from REST API:\nheaders: ${headers}\npayload: ${body}");
             }
         });
@@ -71,14 +70,14 @@ public class RestRouteBuilderTest extends CamelBlueprintTestSupport {
     public void restTest() throws Exception {
         assertTrue(context.getStatus().isStarted());
 
-        MockEndpoint mockRestAction = getMockEndpoint("mock:rest-task");
+        MockEndpoint mockRestAction = getMockEndpoint("mock:test-rest-task");
         mockRestAction.expectedMessageCount(1);
 
         ProducerTemplate template1 = context.createProducerTemplate();
-        template1.sendBody("direct:http-test-endpoint", null);
+        template1.sendBody("direct:test-generate-http-client-request", null);
         assertMockEndpointsSatisfied(60, TimeUnit.SECONDS);
 
-        MockEndpoint mockHttpResponse = getMockEndpoint("mock:http-test-response");
+        MockEndpoint mockHttpResponse = getMockEndpoint("mock:test-http-client-response");
         Exchange httpResponse = mockHttpResponse.getReceivedExchanges().get(0);
         assertEquals(SC_OK, httpResponse.getMessage().getHeader("CamelHttpResponseCode"));
         String expectedHttpResponse = "{\n" +

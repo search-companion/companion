@@ -6,48 +6,7 @@
          http://www.osgi.org/xmlns/blueprint/v1.0.0 https://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
          http://camel.apache.org/schema/blueprint https://camel.apache.org/schema/blueprint/camel-blueprint.xsd">
 
-    <cm:property-placeholder persistent-id="companion.rest" placeholder-prefix="$rest{" update-strategy="reload"/>
-    
-    <bean id="loginService" class="org.eclipse.jetty.jaas.JAASLoginService">
-        <property name="name" value="karaf login module"/>
-        <property name="loginModuleName" value="karaf"/>
-        <property name="roleClassNames">
-            <list>
-                <value>org.apache.karaf.jaas.boot.principal.RolePrincipal</value>
-            </list>
-        </property>
-    </bean>
-    
-    <bean id="identityService" class="org.eclipse.jetty.security.DefaultIdentityService"/>
-    
-    <bean id="constraint" class="org.eclipse.jetty.util.security.Constraint">
-        <property name="name" value="BASIC"/>
-        <property name="roles">
-            <list>
-                <value>restapi</value>
-            </list>
-        </property>
-        <property name="authenticate" value="true"/>
-    </bean>
-    
-    <!-- required for api security implementation -->
-    <bean id="constraintMapping" class="org.eclipse.jetty.security.ConstraintMapping">
-        <property name="constraint" ref="constraint"/>
-        <property name="pathSpec" value="/api/*"/>
-    </bean>
-    
-    <bean id="securityHandler" class="org.eclipse.jetty.security.ConstraintSecurityHandler">
-        <property name="authenticator">
-            <bean class="org.eclipse.jetty.security.authentication.BasicAuthenticator"/>
-        </property>
-        <property name="constraintMappings">
-            <list>
-                <ref component-id="constraintMapping"/>
-            </list>
-        </property>
-        <property name="loginService" ref="loginService"/>
-        <property name="identityService" ref="identityService"/>
-    </bean>
+    <cm:property-placeholder persistent-id="companion.core" update-strategy="reload"/>
     
     <camelContext id="companion-rest" trace="{{rest.trace}}" xmlns="http://camel.apache.org/schema/blueprint">
     
@@ -75,7 +34,6 @@
                 enableCORS="true"
                 clientRequestValidation="true"
         >
-            <endpointProperty key="handlers" value="#securityHandler"/>
             <dataFormatProperty key="prettyPrint" value="true"/>
             <apiProperty key="api.title" value="{{rest.api.title}}"/>
             <apiProperty key="api.description" value="{{rest.api.description}}"/>
@@ -84,12 +42,6 @@
             <apiProperty key="api.contact.email" value="{{rest.api.contact.email}}"/>
 
         </restConfiguration>
-        
-        <rest>
-            <securityDefinitions>
-                <basicAuth key="basicAuth"/>
-            </securityDefinitions>
-        </rest>
 
     </camelContext>
 

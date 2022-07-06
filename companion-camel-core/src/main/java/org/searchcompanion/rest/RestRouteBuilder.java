@@ -18,8 +18,7 @@ public class RestRouteBuilder extends RouteBuilder {
                 .description("Companion collections rest endpoint")
                 .produces("application/json")
                 .get("{collection}")
-                .security("basicAuth")
-                .to("direct-vm:rest-task");
+                .to("direct:task-init");
 
     }
 
