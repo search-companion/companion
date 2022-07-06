@@ -73,7 +73,7 @@
         <distributionManagement.snapshot.name>Companion Development Snapshot Repository</distributionManagement.snapshot.name>
         <distributionManagement.snapshot.url>https://mvn.search-companion.org/mvnrepo/companion-snapshot</distributionManagement.snapshot.url>
     
-        <camel.version>3.16.0</camel.version>
+        <camel.version>3.18.0</camel.version>
         <camel-test.version>3.9.0</camel-test.version>
         <commons-dbcp2.version>2.1.1</commons-dbcp2.version>
         <commons-io.version>2.8.0</commons-io.version>

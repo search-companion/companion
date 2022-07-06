@@ -9,7 +9,6 @@ import java.util.concurrent.TimeUnit;
 
 public class TaskHandler {
 
-
     private final CamelContext camelContext;
     private final String defaulttaskExclusiveLockKey;
     private final ConcurrentHashMap<String, Semaphore> semaphoreMap = new ConcurrentHashMap<>();

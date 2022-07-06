@@ -15,15 +15,6 @@
     
     <packaging>bundle</packaging>
     
-    <dependencies>
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-jaas</artifactId>
-            <version>9.4.38.v20210224</version>
-            <scope>runtime</scope>
-        </dependency>
-    </dependencies>
-    
     <build>
         <plugins>
             <plugin>
