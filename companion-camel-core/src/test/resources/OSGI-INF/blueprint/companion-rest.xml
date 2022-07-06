@@ -28,7 +28,7 @@
         <restConfiguration
                 component="jetty"
                 bindingMode="auto"
-                contextPath="{{rest.context-path}}"
+                contextPath="{{rest.contextPath}}"
                 apiContextPath="/api-doc"
                 port="{{rest.port}}"
                 enableCORS="true"

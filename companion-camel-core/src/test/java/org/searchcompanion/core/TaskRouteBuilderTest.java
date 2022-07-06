@@ -51,7 +51,7 @@ public class TaskRouteBuilderTest extends CamelBlueprintTestSupport {
                                 .setProperty("DelayTimeOut", constant(100L))
                                 .process(exchange -> {
                                     int counter = exchange.getProperty(Exchange.TIMER_COUNTER, Integer.class);
-                                    exchange.setProperty ("isSingleThreadProcess", (counter & 1) == 0);
+                                    exchange.setProperty ("taskExclusiveLock", (counter & 1) == 0);
                                 })
                                 .to("direct:task-init");
                     }
@@ -59,7 +59,7 @@ public class TaskRouteBuilderTest extends CamelBlueprintTestSupport {
         );
         AdviceWith.adviceWith(
                 context,
-                "task-init",
+                "task-init  ",
                 a -> a.weaveAddLast().to("mock:task-init")
         );
         AdviceWith.adviceWith(
@@ -69,13 +69,13 @@ public class TaskRouteBuilderTest extends CamelBlueprintTestSupport {
         );
         AdviceWith.adviceWith(
                 context,
-                "process-task",
-                a -> a.weaveAddLast().to("mock:process-task")
+                "task-submit",
+                a -> a.weaveAddLast().to("mock:task-submit")
         );
         startCamelContext();
         MockEndpoint mockP1 = getMockEndpoint("mock:task-init");
         MockEndpoint mockP1Exception = getMockEndpoint("mock:task-reject");
-        MockEndpoint mockP2 = getMockEndpoint("mock:process-task");
+        MockEndpoint mockP2 = getMockEndpoint("mock:task-submit");
         Integer[] expectedRejected = new Integer[] {4,6,10};
         mockP1Exception.expectedMessageCount(expectedRejected.length);
         TimerEndpoint timerEndpoint = ((TimerEndpoint) context.getEndpoints().stream().filter(ep -> ep instanceof TimerEndpoint).findFirst().orElse(context.getEndpoint("timer://dummy")));

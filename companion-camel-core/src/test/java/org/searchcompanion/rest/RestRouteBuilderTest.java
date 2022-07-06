@@ -58,7 +58,7 @@ public class RestRouteBuilderTest extends CamelBlueprintTestSupport {
                         });
                 from("direct:test-generate-http-client-request")
                         .setHeader(Exchange.HTTP_QUERY, constant("action=testAction"))
-                        .to("http://localhost:{{rest.port}}{{rest.context-path}}/c/testCollection1")
+                        .to("http://localhost:{{rest.port}}{{rest.contextPath}}/c/testCollection1")
                         .setBody(simple("${bodyAs(String)}"))
                         .to("mock:test-http-client-response")
                         .log(LoggingLevel.INFO, "Task response received from REST API:\nheaders: ${headers}\npayload: ${body}");

@@ -11,11 +11,12 @@ public class TaskHandler {
 
 
     private final CamelContext camelContext;
-    private final String defaultTaskLockKey = this.toString();
-    private final ConcurrentHashMap<String, Semaphore> semaphoreMap = new ConcurrentHashMap();
+    private final String defaulttaskExclusiveLockKey;
+    private final ConcurrentHashMap<String, Semaphore> semaphoreMap = new ConcurrentHashMap<>();
 
     private TaskHandler(CamelContext camelContext) {
         this.camelContext = camelContext;
+        this.defaulttaskExclusiveLockKey = camelContext.toString().concat("-").concat(this.toString());
     }
 
     public static TaskHandler initWithContext(CamelContext camelContext) {
@@ -23,24 +24,28 @@ public class TaskHandler {
     }
 
     public void allocate(Exchange exchange) throws IllegalStateException, InterruptedException {
-        if (exchange.getProperty("taskLockKey") == null) {
-            exchange.setProperty("taskLockKey", defaultTaskLockKey);
+        if (!exchange.getProperty("taskExclusiveLock", Boolean.FALSE, Boolean.class)) {
+            return;
         }
-        String taskLockKey = exchange.getProperty("taskLockKey", String.class);
-        if (!semaphoreMap.containsKey(taskLockKey)) {
-            semaphoreMap.put(taskLockKey, new Semaphore(1));
+        if (exchange.getProperty("taskExclusiveLockKey") == null) {
+            exchange.setProperty("taskExclusiveLockKey", defaulttaskExclusiveLockKey);
         }
-        if (!semaphoreMap.get(taskLockKey).tryAcquire(0, TimeUnit.SECONDS)) {
-            throw new IllegalStateException("Only one long running task can be run at the same time for key = '" + taskLockKey + "' !");
+        String taskExclusiveLockKey = exchange.getProperty("taskExclusiveLockKey", String.class);
+        if (!semaphoreMap.containsKey(taskExclusiveLockKey)) {
+            semaphoreMap.put(taskExclusiveLockKey, new Semaphore(1));
         }
-        exchange.setProperty("hasAllocationAcquired", true);
+        if (!semaphoreMap.get(taskExclusiveLockKey).tryAcquire(0, TimeUnit.SECONDS)) {
+            throw new IllegalStateException("Only one long running task can be run at the same time for key = '" + taskExclusiveLockKey + "' !");
+        }
+        exchange.setProperty("hasExclusiveLockAcquired", true);
     }
 
     public void deallocate(Exchange exchange) {
-        String taskLockKey = exchange.getProperty("taskLockKey", String.class);
-        if (exchange.getProperty("hasAllocationAcquired", false, Boolean.class)) {
-            semaphoreMap.get(taskLockKey).release();
+        String taskExclusiveLockKey = exchange.getProperty("taskExclusiveLockKey", String.class);
+        if (exchange.getProperty("hasExclusiveLockAcquired", Boolean.FALSE, Boolean.class)) {
+            semaphoreMap.get(taskExclusiveLockKey).release();
         }
+        exchange.removeProperty("hasExclusiveLockAcquired");
     }
 
     public void delayThread(Exchange exchange) throws InterruptedException {
